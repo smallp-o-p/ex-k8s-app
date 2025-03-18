@@ -16,8 +16,8 @@ export default defineConfig({
         host: "0.0.0.0",
         cors: true,
         port: 5173,
-        // hmr: {
-        //     host: 'host.docker.internal'
-        // }
+        hmr: {
+            host: 'host.docker.internal'
+        }
     },
 });
