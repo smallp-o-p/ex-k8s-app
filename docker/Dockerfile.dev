@@ -1,0 +1,42 @@
+FROM dunglas/frankenphp
+RUN ln -sf /bin/bash /bin/sh
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    postgresql-client \
+    libpq-dev \
+    libzip-dev \ 
+    nodejs
+
+RUN install-php-extensions \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    intl \
+    zip \
+    opcache \
+    xml 
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
+RUN docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-install pgsql pdo_pgsql
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+WORKDIR /app
+COPY ./Caddyfile /etc/caddy/Caddyfile
+COPY ./entry.sh /root/entry.sh
+RUN chmod +x /root/entry.sh
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
+EXPOSE 8000
+EXPOSE 2020
+EXPOSE 2021
+ENTRYPOINT ["/root/entry.sh" ]

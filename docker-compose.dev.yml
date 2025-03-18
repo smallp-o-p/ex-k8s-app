@@ -1,0 +1,92 @@
+services:
+  example-k8s-app:
+    image: k8s-app-dev
+    ports:
+      - '8000:8000'
+    build:
+      dockerfile: ./docker/Dockerfile.dev
+    depends_on:
+      vite:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      admin:
+        condition: service_started
+    volumes: 
+      - .:/app
+    networks:
+      - pgsql
+      - redis
+      - sail
+  vite:
+    image: node:latest
+    ports: 
+      - '5173:5173'
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: ["bash" ,"-c" ,"npm install && npm run build"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "--fail", "-G", "http://localhost:5173"]
+    networks:
+      - sail
+  postgres:
+    image: 'postgres:latest'
+    restart: always
+    environment:
+      - PGUSER=ex_k8s
+      - POSTGRES_USER=ex_k8s
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=laravel
+    ports:
+      - '5432:5432'
+    volumes:
+      - 'pg-2-data:/var/lib/postgresql/data'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"] 
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - sail 
+  redis:
+    image: 'redis:latest'
+    restart: always
+    command: 'redis-server --save 20 1 --loglevel warning'
+    volumes:
+      - 'cache:/data'
+    ports:
+    - '6379:6379'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli
+        - ping
+      interval: 10s
+      retries: 10
+      timeout: 10s
+    networks:
+      - redis 
+  admin:
+    image: 'phpmyadmin:latest'
+    restart: always
+    ports:
+      - '8080:8080'
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - sail 
+volumes:
+    pg-2-data: 
+      driver: local 
+    cache: 
+      driver: local
+networks:
+  sail: 
+    driver: bridge 
+  pgsql:
+    driver: bridge
+  redis:
+    driver: bridge

@@ -1,0 +1,25 @@
+{
+  auto_https off
+  frankenphp
+  order php_server before file_server
+}
+
+:2020 {
+  respond "Hello!\n"
+}
+
+:2021 {
+  respond "Goodbye!\n"
+}
+
+:8000 {
+  root * /app/public/ 
+  encode zstd br gzip
+  php_server {
+    try_files {path} index.php
+  }
+  file_server 
+  log {
+    output stdout
+  }
+}
