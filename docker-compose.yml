@@ -1,10 +1,10 @@
 services:
   example-k8s-app:
-    image: k8s-app-prod
+    image: k8s-app-dev
     ports:
       - '8000:8000'
     build:
-      dockerfile: ./docker/Dockerfile.prod
+      dockerfile: ./docker/Dockerfile.dev
     depends_on:
       vite:
         condition: service_started
